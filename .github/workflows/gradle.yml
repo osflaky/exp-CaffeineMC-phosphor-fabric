@@ -1,0 +1,38 @@
+name: gradle-ci
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout sources
+      uses: actions/checkout@v2
+    - name: Set up JDK
+      uses: actions/setup-java@v2
+      with:
+        distribution: 'adopt'
+        java-version: 17
+    - name: Set release tag
+      if: startsWith(github.ref, 'refs/tags/')
+      run: echo "RELEASE_TAG=${GITHUB_REF#refs/tags/}" >> $GITHUB_ENV
+    - name: Build with Gradle
+      run: ./gradlew build
+      env:
+        BUILD_ID: ${{ github.run_number }}
+    - name: Upload prod artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: build-artifacts
+        path: |
+          build/libs/
+          !build/libs/*-sources.jar
+    - name: Upload dev artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: build-artifacts
+        path: build/devlibs/
+    name: build [ubuntu-latest--x64]
+    timeout-minutes: 150
